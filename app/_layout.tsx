@@ -13,7 +13,9 @@ function RootGate() {
     return <Redirect href="/zip" />;
   }
 
-  return <Stack />;
+  return <Stack screenOptions={{
+        headerShown: false,
+      }}/>;
 }
 
 export default function RootLayout() {
