@@ -9,12 +9,15 @@ import {
   useWindowDimensions,
 } from "react-native";
 
+import { Image } from "expo-image";
+import { Dimensions } from "react-native";
 import { useCompare } from "../context/CompareContext";
 import { useZip } from "../context/zipContext";
 import { gasPrices } from "../data/gasPrices";
 import { vehicles } from "../data/vehicles";
 import zipToCounty from "../data/zipCodesAndCounties";
 import { styles } from "../styles";
+import { vehiclePicById } from "./images/vehiclePics/vehiclePicMap";
 
 const ANNUAL_MILES = 15000;
 const HOME_ELECTRICITY_PRICE = 0.1431; // $/kWh
@@ -28,6 +31,30 @@ type ComputedCompare = {
   priceDiff: number;
   annualDiff: number;
 };
+const { width } = Dimensions.get("window");
+const heroWidth = Math.round(width * 1.0);
+const heroHeight = Math.round(heroWidth * 0.6);
+
+export function VehicleHeroImage({ vehicleId }: { vehicleId: string }) {
+  const src = vehiclePicById[vehicleId];
+
+  if (!src) return null; // or render a placeholder
+
+  return (
+    <View style={{ alignItems: "center", marginTop: 10 }}>
+      <Image
+  source={src}
+  contentFit="contain"
+  style={{
+    width: heroWidth,
+    height: heroHeight,
+    maxHeight: 240,
+    backgroundColor: "transparent",
+  }}
+/>
+    </View>
+  );
+}
 
 function Dots({ count, index }: { count: number; index: number }) {
   return (
@@ -261,6 +288,7 @@ function VehicleCard({
         />
 
         <AboutSection vehicle={vehicle} />
+        
       </ScrollView>
     );
   }
@@ -389,6 +417,7 @@ function VehicleCard({
         />
 
         <AboutSection vehicle={vehicle} />
+        <VehicleHeroImage vehicleId={vehicle.id} />
       </ScrollView>
     );
   }
