@@ -1,24 +1,27 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { Redirect, Stack, useSegments } from "expo-router";
+import { CompareProvider } from "../context/CompareContext";
+import { ZipProvider, useZip } from "../context/zipContext";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+function RootGate() {
+  const { zip } = useZip();
+  const segments = useSegments();
+
+  const onZipScreen = segments[0] === "zip";
+
+  if (!zip && !onZipScreen) {
+    return <Redirect href="/zip" />;
+  }
+
+  return <Stack />;
+}
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <CompareProvider>
+      <ZipProvider>
+        <RootGate />
+      </ZipProvider>
+    </CompareProvider>
   );
 }
