@@ -267,7 +267,11 @@ function VehicleCard({
   // Gas + hybrid
   if (vehicle.type === "gas" || vehicle.type === "hybrid") {
     return (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={shellStyle}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={shellStyle}
+        style={{ height: pageHeight }}
+      >
         <Text style={styles.title}>
           {vehicle.year} {vehicle.make} {vehicle.model}
         </Text>
@@ -319,7 +323,11 @@ function VehicleCard({
     const milesFromPublic = kwhFromPublic * milesPerKwh;
 
     return (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={shellStyle}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={shellStyle}
+        style={{ height: pageHeight }}
+      >
         <Text style={styles.title}>
           {vehicle.year} {vehicle.make} {vehicle.model}
         </Text>
@@ -388,7 +396,11 @@ function VehicleCard({
     const milesFromPublic = kwhFromPublic * milesPerKwh;
 
     return (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={shellStyle}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={shellStyle}
+        style={{ height: pageHeight }}
+      >
         <Text style={styles.title}>
           {vehicle.year} {vehicle.make} {vehicle.model}
         </Text>
@@ -438,7 +450,11 @@ function VehicleCard({
 
   // Fallback
   return (
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={shellStyle}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={shellStyle}
+      style={{ height: pageHeight }}
+    >
       <Text style={styles.title}>
         {vehicle.year} {vehicle.make} {vehicle.model}
       </Text>
