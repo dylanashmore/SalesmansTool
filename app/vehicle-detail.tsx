@@ -10,7 +10,6 @@ import {
 } from "react-native";
 
 import { Image } from "expo-image";
-import { Dimensions } from "react-native";
 import { useCompare } from "../context/CompareContext";
 import { useZip } from "../context/zipContext";
 import { gasPrices } from "../data/gasPrices";
@@ -21,7 +20,6 @@ import { vehiclePicById } from "./images/vehiclePics/vehiclePicMap";
 
 const ANNUAL_MILES = 15000;
 const HOME_ELECTRICITY_PRICE = 0.1431; // $/kWh
-const [index, setIndex] = useState(0);
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
@@ -31,27 +29,37 @@ type ComputedCompare = {
   priceDiff: number;
   annualDiff: number;
 };
-const { width } = Dimensions.get("window");
-const heroWidth = Math.round(width * 1.0);
-const heroHeight = Math.round(heroWidth * 0.6);
-
-export function VehicleHeroImage({ vehicleId }: { vehicleId: string }) {
+export function VehicleHeroImage({
+  vehicleId,
+  containerWidth,
+}: {
+  vehicleId: string;
+  containerWidth: number;
+}) {
   const src = vehiclePicById[vehicleId];
 
-  if (!src) return null; // or render a placeholder
+  if (!src) return null;
+
+  const paddingHorizontal = 36; // matches VehicleCard's horizontal padding (18 * 2)
+  const maxHeight = 240;
+  const minWidth = 200;
+
+  const imageWidth = Math.max(minWidth, Math.round(containerWidth - paddingHorizontal));
+  const computedHeight = Math.round(imageWidth * 0.6);
+  const imageHeight = Math.min(computedHeight, maxHeight);
 
   return (
     <View style={{ alignItems: "center", marginTop: 10 }}>
       <Image
-  source={src}
-  contentFit="contain"
-  style={{
-    width: heroWidth,
-    height: heroHeight,
-    maxHeight: 240,
-    backgroundColor: "transparent",
-  }}
-/>
+        source={src}
+        contentFit="contain"
+        style={{
+          width: imageWidth,
+          height: imageHeight,
+          maxHeight: maxHeight,
+          backgroundColor: "transparent",
+        }}
+      />
     </View>
   );
 }
@@ -233,10 +241,13 @@ function VehicleCard({
   const publicChargingPrice = 0.3970;
 
   const shellStyle = {
-    ...styles.container,
-    backgroundColor: "#ffffff",
+    paddingHorizontal: 18,   // match your container padding
+    paddingTop: 18,
+    paddingBottom: 90,       // IMPORTANT: gives room to scroll past the image/dots
+    backgroundColor: "#fff",
     width: pageWidth,
     minHeight: pageHeight,
+    flexGrow: 1,
   };
 
   const HeaderRow = () => (
@@ -288,6 +299,7 @@ function VehicleCard({
         />
 
         <AboutSection vehicle={vehicle} />
+        <VehicleHeroImage vehicleId={vehicle.id} containerWidth={pageWidth} />
         
       </ScrollView>
     );
@@ -356,6 +368,8 @@ function VehicleCard({
         />
 
         <AboutSection vehicle={vehicle} />
+        <VehicleHeroImage vehicleId={vehicle.id} containerWidth={pageWidth} />
+        
       </ScrollView>
     );
   }
@@ -417,7 +431,7 @@ function VehicleCard({
         />
 
         <AboutSection vehicle={vehicle} />
-        <VehicleHeroImage vehicleId={vehicle.id} />
+        <VehicleHeroImage vehicleId={vehicle.id} containerWidth={pageWidth} />
       </ScrollView>
     );
   }
@@ -439,6 +453,7 @@ function VehicleCard({
       />
 
       <AboutSection vehicle={vehicle} />
+      <VehicleHeroImage vehicleId={vehicle.id} containerWidth={pageWidth} />
 
       <View style={{ marginTop: 10 }}>
         <Text style={{ fontSize: 20, fontWeight: "bold" }}>${vehicle.price.toLocaleString()}</Text>
@@ -528,7 +543,7 @@ export default function VehicleDetailScreen() {
     setIndex(clamp(raw, 0, cards.length - 1));
   }}
   renderItem={({ item }) => (
-    <View style={{ width: pageWidth }}>
+    <View style={{ width: pageWidth, minHeight: pageHeight }}>
       <VehicleCard
         vehicle={item}
         zip={zip}
