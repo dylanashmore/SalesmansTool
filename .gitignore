@@ -48,3 +48,4 @@ dist
 .expo-shared
 .env
 .env.local
+.vercel

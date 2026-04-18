@@ -1,5 +1,5 @@
 import { type Href, useRouter } from "expo-router";
-import { Image, Pressable, StatusBar, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StatusBar, Text, View } from "react-native";
 import { SearchButton } from "../components/SearchButton";
 import { useZip } from "../context/zipContext";
 
@@ -61,53 +61,53 @@ export default function SelectionScreen() {
       </View>
 
       {/* Cards */}
-      <View style={{ flex: 1, backgroundColor: "#F4F4F4", borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 20, gap: 12 }}>
-        {TYPES.map((t) => (
-          <Pressable
-            key={t.label}
-            onPress={() => router.push(t.route)}
-            style={({ pressed }) => ({
-              backgroundColor: "#FFF",
-              borderRadius: 18,
-              overflow: "hidden",
-              height: 154,
-              flexDirection: "row",
-              alignItems: "center",
-              opacity: pressed ? 0.92 : 1,
-              transform: [{ scale: pressed ? 0.984 : 1 }],
-              // Subtle shadow
-              shadowColor: "#000",
-              shadowOpacity: 0.07,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 3 },
-              elevation: 3,
-            })}
-          >
-            {/* Left text */}
-            <View style={{ flex: 1, paddingHorizontal: 20, paddingVertical: 20, justifyContent: "center" }}>
-              {/* Tag */}
-              <View style={{ alignSelf: "flex-start", backgroundColor: t.tagColor + "18", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginBottom: 8 }}>
-                <Text style={{ fontSize: 10, fontWeight: "700", color: t.tagColor, letterSpacing: 0.5 }}>{t.tag}</Text>
+      <View style={{ flex: 1, backgroundColor: "#F4F4F4", borderTopLeftRadius: 26, borderTopRightRadius: 26, overflow: "hidden" }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 24, gap: 12 }}
+        >
+          {TYPES.map((t) => (
+            <Pressable
+              key={t.label}
+              onPress={() => router.push(t.route)}
+              style={({ pressed }) => ({
+                backgroundColor: "#FFF",
+                borderRadius: 18,
+                overflow: "hidden",
+                height: 154,
+                flexDirection: "row",
+                alignItems: "center",
+                opacity: pressed ? 0.92 : 1,
+                transform: [{ scale: pressed ? 0.984 : 1 }],
+                shadowColor: "#000",
+                shadowOpacity: 0.07,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 3 },
+                elevation: 3,
+              })}
+            >
+              <View style={{ flex: 1, paddingHorizontal: 20, paddingVertical: 20, justifyContent: "center" }}>
+                <View style={{ alignSelf: "flex-start", backgroundColor: t.tagColor + "18", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginBottom: 8 }}>
+                  <Text style={{ fontSize: 10, fontWeight: "700", color: t.tagColor, letterSpacing: 0.5 }}>{t.tag}</Text>
+                </View>
+                <Text style={{ fontSize: 24, fontWeight: "800", color: "#0D0D0D", letterSpacing: -0.5, marginBottom: 3 }}>{t.label}</Text>
+                <Text style={{ fontSize: 12, color: "#888", lineHeight: 16 }}>{t.sub}</Text>
+                <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: "#F0F0F0", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "700", color: "#444" }}>Browse</Text>
+                  <Text style={{ fontSize: 11, color: "#888" }}>→</Text>
+                </View>
               </View>
-              <Text style={{ fontSize: 24, fontWeight: "800", color: "#0D0D0D", letterSpacing: -0.5, marginBottom: 3 }}>{t.label}</Text>
-              <Text style={{ fontSize: 12, color: "#888", lineHeight: 16 }}>{t.sub}</Text>
-              {/* Arrow pill */}
-              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: "#F0F0F0", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: "#444" }}>Browse</Text>
-                <Text style={{ fontSize: 11, color: "#888" }}>→</Text>
-              </View>
-            </View>
 
-            {/* Right image */}
-            <View style={{ width: 184, height: 154, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-              <Image
-                source={t.image}
-                style={{ width: 182, height: 132 }}
-                resizeMode="contain"
-              />
-            </View>
-          </Pressable>
-        ))}
+              <View style={{ width: 184, height: 154, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                <Image
+                  source={t.image}
+                  style={{ width: 182, height: 132 }}
+                  resizeMode="contain"
+                />
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
     </View>
   );
