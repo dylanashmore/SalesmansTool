@@ -10,15 +10,14 @@
 
 import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, ScrollView, StatusBar, Text, View, useWindowDimensions } from "react-native";
 import { SearchButton } from "../components/SearchButton";
 import { useCompare } from "../context/CompareContext";
 import { useZip } from "../context/zipContext";
-import { gasPrices } from "../data/gasPrices";
 import { vehicles } from "../data/vehicles";
-import zipToCounty from "../data/zipCodesAndCounties";
 import { vehiclePicById } from "./images/vehiclePics/vehiclePicMap";
+import { getGasApiUrl } from "./utils/gasApi";
 
 const ANNUAL_MILES = 15000;
 const HOME_KWH = 0.1431;
@@ -115,14 +114,15 @@ function HeroImage({ vehicleId, containerWidth }: { vehicleId: string; container
 }
 
 // ── Per-vehicle card ──────────────────────────────────────────────────────────
-function VehicleCard({ vehicle, zip, gasPrice, base, computed, pw, ph }: any) {
+function VehicleCard({ vehicle, zip, gasPrice, gasPriceStatus, base, computed, pw, ph }: any) {
   const isElectric = vehicle.type === "electric";
   const isPHEV = vehicle.type === "plug-in-hybrid";
   const isGasLike = vehicle.type === "gas" || vehicle.type === "hybrid";
+  const hasGasPrice = typeof gasPrice === "number" && gasPrice > 0;
 
   const milesPerKwh = (vehicle.rangeElectric && vehicle.batteryKwh) ? vehicle.rangeElectric / vehicle.batteryKwh : 0;
-  const milesHomePerDollar = milesPerKwh * (gasPrice / HOME_KWH);
-  const milesPublicPerDollar = milesPerKwh * (gasPrice / PUBLIC_KWH);
+  const milesHomePerDollar = hasGasPrice ? milesPerKwh * (gasPrice / HOME_KWH) : 0;
+  const milesPublicPerDollar = hasGasPrice ? milesPerKwh * (gasPrice / PUBLIC_KWH) : 0;
 
   return (
     <ScrollView
@@ -167,15 +167,25 @@ function VehicleCard({ vehicle, zip, gasPrice, base, computed, pw, ph }: any) {
 
       {/* Fuel breakdown */}
       <InfoBox title={`Fuel Breakdown — ZIP ${zip}`}>
-        <Text style={{ fontSize: 13, color: "#555", lineHeight: 20 }}>
-          Local gas price: <Text style={{ fontWeight: "700", color: "#0D0D0D" }}>${gasPrice.toFixed(2)}/gal</Text>
-        </Text>
-        {isGasLike && (
+        {gasPriceStatus === "loading" ? (
+          <Text style={{ fontSize: 13, color: "#555", lineHeight: 20 }}>
+            Loading local gas prices for this ZIP...
+          </Text>
+        ) : hasGasPrice ? (
+          <Text style={{ fontSize: 13, color: "#555", lineHeight: 20 }}>
+            Local gas price: <Text style={{ fontWeight: "700", color: "#0D0D0D" }}>${gasPrice.toFixed(2)}/gal</Text>
+          </Text>
+        ) : (
+          <Text style={{ fontSize: 13, color: "#555", lineHeight: 20 }}>
+            Local gas price is unavailable for this ZIP right now.
+          </Text>
+        )}
+        {isGasLike && hasGasPrice && (
           <Text style={{ fontSize: 13, color: "#555", marginTop: 4, lineHeight: 20 }}>
             For ${gasPrice.toFixed(2)} you get <Text style={{ fontWeight: "700", color: "#0D0D0D" }}>{vehicle.mpgCombined} miles</Text> with this vehicle.
           </Text>
         )}
-        {(isElectric || isPHEV) && milesPerKwh > 0 && (
+        {(isElectric || isPHEV) && hasGasPrice && milesPerKwh > 0 && (
           <>
             <Text style={{ fontSize: 13, color: "#555", marginTop: 4, lineHeight: 20 }}>
               Charging at home: <Text style={{ fontWeight: "700", color: "#0D0D0D" }}>{milesHomePerDollar.toFixed(1)} mi</Text> per dollar
@@ -185,7 +195,7 @@ function VehicleCard({ vehicle, zip, gasPrice, base, computed, pw, ph }: any) {
             </Text>
           </>
         )}
-        {isPHEV && (
+        {isPHEV && hasGasPrice && (
           <Text style={{ fontSize: 13, color: "#555", marginTop: 2, lineHeight: 20 }}>
             Gas mode: <Text style={{ fontWeight: "700", color: "#0D0D0D" }}>{vehicle.mpgCombined} miles</Text> per ${gasPrice.toFixed(2)}
           </Text>
@@ -219,6 +229,7 @@ function Dots({ count, index }: { count: number; index: number }) {
 // ── Main screen ───────────────────────────────────────────────────────────────
 function getCPM(v: any, gasPrice: number) {
   if (v.type === "gas" || v.type === "hybrid" || v.type === "plug-in-hybrid") {
+    if (gasPrice <= 0) return null;
     if (!v.mpgCombined || v.mpgCombined <= 0) return null;
     return gasPrice / v.mpgCombined;
   }
@@ -235,12 +246,59 @@ export default function VehicleDetailScreen() {
   const { compareCart } = useCompare();
   const { width: pw, height: ph } = useWindowDimensions();
 
-  const county = zipToCounty[zip];
-  const gasPrice = gasPrices.find((i) => i.county === county)?.price || 0;
+  const [gasPrice, setGasPrice] = useState<number>(0);
+  const [gasPriceStatus, setGasPriceStatus] = useState<"idle" | "loading" | "error">("idle");
   const id = Array.isArray(vehicleId) ? vehicleId[0] : vehicleId;
   const base = vehicles.find((v) => v.id === id);
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList<any>>(null);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadGasPrice() {
+      if (!zip) {
+        if (isActive) {
+          setGasPrice(0);
+          setGasPriceStatus("idle");
+        }
+        return;
+      }
+
+      try {
+        setGasPriceStatus("loading");
+
+        const response = await fetch(getGasApiUrl(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ zipCode: zip }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(typeof data?.error === "string" ? data.error : "Failed to fetch gas prices.");
+        }
+
+        const nextPrice = Number(data?.cheapestRegular?.regularPrice ?? 0);
+        if (!isActive) return;
+
+        setGasPrice(Number.isFinite(nextPrice) ? nextPrice : 0);
+        setGasPriceStatus("idle");
+      } catch {
+        if (!isActive) return;
+        setGasPrice(0);
+        setGasPriceStatus("error");
+      }
+    }
+
+    loadGasPrice();
+
+    return () => {
+      isActive = false;
+    };
+  }, [zip]);
 
   if (!base) return <View style={{ flex: 1, backgroundColor: "#FFF", alignItems: "center", justifyContent: "center" }}><Text>Vehicle not found</Text></View>;
 
@@ -295,7 +353,7 @@ export default function VehicleDetailScreen() {
           onMomentumScrollEnd={(e) => { setIndex(clamp(Math.round(e.nativeEvent.contentOffset.x / pw), 0, cards.length - 1)); }}
           renderItem={({ item }) => (
             <View style={{ width: pw, minHeight: ph }}>
-              <VehicleCard vehicle={item} zip={zip} gasPrice={gasPrice} base={base} computed={compMap.get(item.id)} pw={pw} ph={ph} />
+              <VehicleCard vehicle={item} zip={zip} gasPrice={gasPrice} gasPriceStatus={gasPriceStatus} base={base} computed={compMap.get(item.id)} pw={pw} ph={ph} />
             </View>
           )}
         />
