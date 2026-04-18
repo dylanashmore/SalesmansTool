@@ -18,6 +18,8 @@ return (
     headerTitle: "",
     headerShadowVisible: false,
     headerTransparent: true, // key: removes the “bar” feeling
+    gestureEnabled: true,
+    headerBackVisible: false,
   }}
 />
 );
